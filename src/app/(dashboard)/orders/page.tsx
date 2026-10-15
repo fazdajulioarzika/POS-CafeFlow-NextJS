@@ -9,6 +9,7 @@ import {
   paymentMethodLabel,
   paymentStatusLabel,
 } from "@/lib/labels";
+import { AutoFilterForm } from "@/components/orders/auto-filter-form";
 import { StatusBadge } from "@/components/orders/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,7 +81,7 @@ export default async function OrdersPage({
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Pesanan</h1>
 
-      <form className="flex flex-wrap gap-2">
+      <AutoFilterForm className="flex flex-wrap gap-2">
         <Input
           name="q"
           defaultValue={q}
@@ -130,7 +131,7 @@ export default async function OrdersPage({
         >
           Reset
         </Link>
-      </form>
+      </AutoFilterForm>
 
       <div className="overflow-x-auto rounded-lg border bg-card">
         <table className="w-full text-sm">

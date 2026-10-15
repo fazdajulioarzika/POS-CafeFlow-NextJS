@@ -43,6 +43,7 @@ export const navItems = [
   { href: "/products", label: "Products" },
   { href: "/categories", label: "Categories" },
   { href: "/inventory", label: "Inventory" },
+  { href: "/recipes", label: "Recipes" },
   { href: "/reports", label: "Reports" },
   { href: "/shifts", label: "Shifts" },
   { href: "/users", label: "Users" },

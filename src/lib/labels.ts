@@ -28,3 +28,10 @@ export const tableStatusLabel: Record<string, string> = {
   reserved: "Dipesan",
   maintenance: "Perbaikan",
 };
+export const movementTypeLabel: Record<string, string> = {
+  initial: "Stok awal",
+  purchase: "Stok masuk",
+  sale: "Penjualan",
+  waste: "Rusak/terbuang",
+  adjustment: "Penyesuaian",
+};
