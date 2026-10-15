@@ -19,6 +19,7 @@ const ORDER_STATUSES = [
   "placed",
   "preparing",
   "ready",
+  "served",
   "completed",
   "cancelled",
 ] as const;

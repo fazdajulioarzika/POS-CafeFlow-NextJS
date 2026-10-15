@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { formatRupiah } from "@/lib/money";
 import { formatDateTime } from "@/lib/datetime";
 import { one } from "@/lib/relations";
+import { getCurrentProfile } from "@/lib/auth";
+import { StatusActionButton } from "@/components/orders/status-action-button";
 import {
   orderStatusLabel,
   orderTypeLabel,
@@ -29,12 +31,28 @@ export default async function OrderDetailPage({
     .order("position", { referencedTable: "order_items" })
     .maybeSingle();
   if (!order) notFound();
+  const me = await getCurrentProfile();
+  const canAct = ["owner", "manager", "cashier"].includes(me.role);
+  const nextStep: { to: "served" | "completed"; label: string } | null = !canAct
+    ? null
+    : order.status === "ready"
+    ? order.order_type === "dine_in"
+      ? { to: "served", label: "Tandai sudah diantar" }
+      : { to: "completed", label: "Serahkan ke pelanggan" }
+    : order.status === "served"
+    ? { to: "completed", label: "Pelanggan selesai" }
+    : null;
 
   return (
     <div className="max-w-3xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold">{order.order_number}</h1>
-        <div className="flex gap-2">
+        {nextStep && (
+          <StatusActionButton orderId={order.id} to={nextStep.to}>
+            {nextStep.label}
+          </StatusActionButton>
+        )}
+        <div className="flex flex-wrap items-start gap-2">
           <Link
             href={`/receipt/${order.id}`}
             className="inline-flex h-9 items-center rounded-md border px-4 text-sm"

@@ -3,6 +3,7 @@ export const orderStatusLabel: Record<string, string> = {
   placed: "Baru",
   preparing: "Disiapkan",
   ready: "Siap",
+  served: "Diantar",
   completed: "Selesai",
   cancelled: "Dibatalkan",
 };
@@ -20,4 +21,10 @@ export const paymentMethodLabel: Record<string, string> = {
 export const orderTypeLabel: Record<string, string> = {
   dine_in: "Dine-in",
   takeaway: "Takeaway",
+};
+export const tableStatusLabel: Record<string, string> = {
+  available: "Kosong",
+  occupied: "Terisi",
+  reserved: "Dipesan",
+  maintenance: "Perbaikan",
 };

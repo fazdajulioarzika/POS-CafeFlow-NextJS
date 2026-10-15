@@ -16,7 +16,7 @@ type Table = {
 };
 
 export const statusLabel: Record<string, string> = {
-  available: "Tersedia",
+  available: "Kosong",
   occupied: "Terisi",
   reserved: "Dipesan",
   maintenance: "Perbaikan",
