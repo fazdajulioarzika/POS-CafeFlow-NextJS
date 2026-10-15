@@ -17,6 +17,7 @@ export const routeAccess: { prefix: string; roles: Role[] }[] = [
   { prefix: "/settings", roles: ["owner"] },
   { prefix: "/audit-logs", roles: ["owner"] },
   { prefix: "/profile", roles: ["owner", "manager", "cashier", "kitchen"] },
+  { prefix: "/receipt", roles: ["owner", "manager", "cashier"] },
 ];
 
 export const defaultRoute: Record<Role, string> = {
