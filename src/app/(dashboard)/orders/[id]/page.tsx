@@ -6,6 +6,7 @@ import { formatDateTime } from "@/lib/datetime";
 import { one } from "@/lib/relations";
 import { getCurrentProfile } from "@/lib/auth";
 import { StatusActionButton } from "@/components/orders/status-action-button";
+import { RefundForm } from "@/components/orders/refund-form";
 import {
   orderStatusLabel,
   orderTypeLabel,
@@ -25,7 +26,7 @@ export default async function OrderDetailPage({
   const { data: order } = await supabase
     .from("orders")
     .select(
-      "*, order_items(*), payments(*), cashier:profiles(full_name), table:dining_tables(table_number)"
+      "*, order_items(*), payments(*), cashier:profiles(full_name), table:dining_tables(table_number), refund:refunds(reason, amount, created_at, refunder:profiles(full_name))"
     )
     .eq("id", id)
     .order("position", { referencedTable: "order_items" })
@@ -42,6 +43,9 @@ export default async function OrderDetailPage({
     : order.status === "served"
     ? { to: "completed", label: "Pelanggan selesai" }
     : null;
+  const refund = one(order.refund);
+  const canRefund =
+    ["owner", "manager"].includes(me.role) && order.payment_status === "paid";
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -87,6 +91,21 @@ export default async function OrderDetailPage({
           />
         </div>
       </div>
+      {refund && (
+        <div
+          role="status"
+          className="space-y-1 rounded-lg border-2 border-red-500 bg-red-50 p-4 text-sm text-red-900"
+        >
+          <div className="font-semibold">
+            Pesanan dibatalkan, refund {formatRupiah(refund.amount)}
+          </div>
+          <div>Alasan: {refund.reason}</div>
+          <div>
+            Oleh {one(refund.refunder)?.full_name || "-"} ·{" "}
+            {formatDateTime(refund.created_at)}
+          </div>
+        </div>
+      )}
 
       <div className="overflow-x-auto rounded-lg border bg-card">
         <table className="w-full text-sm">
@@ -175,6 +194,12 @@ export default async function OrderDetailPage({
           </table>
         </div>
       </section>
+      {canRefund && (
+        <section className="space-y-3 border-t pt-6">
+          <h2 className="text-lg font-medium">Batalkan / refund</h2>
+          <RefundForm orderId={order.id} />
+        </section>
+      )}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getCurrentProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PosClient } from "@/components/pos/pos-client";
@@ -6,7 +7,7 @@ export default async function PosPage() {
   const me = await getCurrentProfile();
   const supabase = await createClient();
 
-  const [c, p, v, t, s] = await Promise.all([
+  const [c, p, v, t, s, sh] = await Promise.all([
     supabase
       .from("categories")
       .select("id, name")
@@ -29,6 +30,12 @@ export default async function PosPage() {
       .eq("is_active", true)
       .order("table_number"),
     supabase.from("app_settings").select("tax_percent").single(),
+    supabase
+      .from("shifts")
+      .select("id")
+      .eq("cashier_id", me.id)
+      .eq("status", "open")
+      .maybeSingle(),
   ]);
 
   const categories = c.data ?? [];
@@ -38,13 +45,26 @@ export default async function PosPage() {
   );
 
   return (
-    <PosClient
-      categories={categories}
-      products={products}
-      variants={v.data ?? []}
-      tables={t.data ?? []}
-      taxPercent={Number(s.data?.tax_percent ?? 0)}
-      canDiscount={me.role !== "cashier"}
-    />
+    <>
+      {!sh.data && (
+        <div
+          role="status"
+          className="mb-4 rounded-xl border-2 border-amber-400 bg-amber-50 p-3 text-sm"
+        >
+          Belum ada shift terbuka, jadi pembayaran tunai akan ditolak.{" "}
+          <Link href="/shifts" className="font-medium underline">
+            Buka shift
+          </Link>
+        </div>
+      )}
+      <PosClient
+        categories={categories}
+        products={products}
+        variants={v.data ?? []}
+        tables={t.data ?? []}
+        taxPercent={Number(s.data?.tax_percent ?? 0)}
+        canDiscount={me.role !== "cashier"}
+      />
+    </>
   );
 }
