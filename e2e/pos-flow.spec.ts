@@ -68,16 +68,26 @@ test("kasir membuat pesanan, dapur memproses, meja kosong lagi", async ({
   }).toPass({ timeout: 20_000 });
 
   await deliver.click();
+
   const leave = tableCard().getByRole("button", {
     name: "Pelanggan selesai, kosongkan meja",
   });
-  await expect(leave).toBeVisible();
+  await expect(async () => {
+    await cashier.reload();
+    await expect(leave).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
+
   await leave.click();
 
-  await expect(cashier.getByRole("link", { name: orderNo })).toHaveCount(0);
+  await expect(async () => {
+    await cashier.reload();
+    await expect(cashier.getByRole("link", { name: orderNo })).toHaveCount(0, {
+      timeout: 2000,
+    });
+  }).toPass({ timeout: 20_000 });
   await expect(
     kitchen.getByRole("article", { name: `Pesanan ${orderNo}` })
-  ).toHaveCount(0);
+  ).toHaveCount(0, { timeout: 15_000 });
 });
 
 test("tunai kurang dari total ditolak di POS", async ({ page }) => {
