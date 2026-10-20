@@ -67,7 +67,13 @@ test("kasir membuat pesanan, dapur memproses, meja kosong lagi", async ({
     await expect(deliver).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 20_000 });
 
-  await deliver.click();
+  // tunggu Server Action selesai, jangan reload di tengah request
+  await Promise.all([
+    cashier.waitForResponse(
+      (r) => r.request().method() === "POST" && r.url().includes("/tables")
+    ),
+    deliver.click(),
+  ]);
 
   const leave = tableCard().getByRole("button", {
     name: "Pelanggan selesai, kosongkan meja",
@@ -77,7 +83,12 @@ test("kasir membuat pesanan, dapur memproses, meja kosong lagi", async ({
     await expect(leave).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 20_000 });
 
-  await leave.click();
+  await Promise.all([
+    cashier.waitForResponse(
+      (r) => r.request().method() === "POST" && r.url().includes("/tables")
+    ),
+    leave.click(),
+  ]);
 
   await expect(async () => {
     await cashier.reload();
