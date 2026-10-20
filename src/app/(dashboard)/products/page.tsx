@@ -51,6 +51,7 @@ export default async function ProductsPage({
         />
         <select
           name="category"
+          aria-label="Kategori"
           defaultValue={category ?? ""}
           className="h-9 rounded-md border border-input bg-card px-3 text-sm"
         >

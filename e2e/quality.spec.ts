@@ -69,8 +69,13 @@ test("halaman owner tanpa pelanggaran aksesibilitas serius", async ({
       .withTags(["wcag2a", "wcag2aa"])
       .analyze();
     for (const v of r.violations) {
-      if (v.impact === "serious" || v.impact === "critical")
-        found.push(`${path} → ${v.id} (${v.nodes.length} elemen)`);
+      if (v.impact === "serious" || v.impact === "critical") {
+        found.push(
+          `${path} → ${v.id}: ${v.nodes
+            .map((n) => n.target.join(" "))
+            .join(" | ")}`
+        );
+      }
     }
   }
   expect(found).toEqual([]);

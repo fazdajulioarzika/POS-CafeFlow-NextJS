@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { login } from "./helpers";
+test.describe.configure({ retries: 0 });
 
 test("kasir membuat pesanan, dapur memproses, meja kosong lagi", async ({
   browser,
@@ -40,26 +41,40 @@ test("kasir membuat pesanan, dapur memproses, meja kosong lagi", async ({
   // dapur
   const kitchen = await (await browser.newContext()).newPage();
   await login(kitchen, "kitchen");
-  const card = kitchen.getByRole("article", { name: `Pesanan ${orderNo}` });
-  await expect(card).toBeVisible();
-  await expect(card.getByText(/Rp/)).toHaveCount(0); // dapur tidak melihat harga
-  await card.getByRole("button", { name: "Mulai siapkan" }).click();
-  await card.getByRole("button", { name: "Tandai siap" }).click();
-  await expect(card.getByText(/Menunggu diantar oleh kasir/)).toBeVisible();
+  const kitchenCard = kitchen.getByRole("article", {
+    name: `Pesanan ${orderNo}`,
+  });
+  await expect(kitchenCard).toBeVisible();
+  await expect(kitchenCard.getByText(/Rp/)).toHaveCount(0); // dapur tidak melihat harga
+  await kitchenCard.getByRole("button", { name: "Mulai siapkan" }).click();
+  await kitchenCard.getByRole("button", { name: "Tandai siap" }).click();
+  await expect(
+    kitchenCard.getByText(/Menunggu diantar oleh kasir/)
+  ).toBeVisible();
 
   // kasir mengantar, lalu pelanggan pergi
   await cashier.goto("/tables");
-  const tableCard = cashier
-    .locator("div.rounded-xl")
-    .filter({ hasText: orderNo });
-  await tableCard.getByRole("button", { name: "Tandai sudah diantar" }).click();
-  await tableCard
+  await cashier.getByRole("link", { name: orderNo }).waitFor();
+  const tableCard = () =>
+    cashier
+      .locator("div.rounded-xl", {
+        has: cashier.getByRole("link", { name: orderNo }),
+      })
+      .last();
+
+  await tableCard()
+    .getByRole("button", { name: "Tandai sudah diantar" })
+    .click();
+  await expect(
+    tableCard().getByRole("button", {
+      name: "Pelanggan selesai, kosongkan meja",
+    })
+  ).toBeVisible();
+  await tableCard()
     .getByRole("button", { name: "Pelanggan selesai, kosongkan meja" })
     .click();
 
-  await expect(
-    cashier.locator("div.rounded-xl").filter({ hasText: /^T5/ })
-  ).toContainText("Kosong");
+  await expect(cashier.getByRole("link", { name: orderNo })).toHaveCount(0);
   await expect(
     kitchen.getByRole("article", { name: `Pesanan ${orderNo}` })
   ).toHaveCount(0);
@@ -69,9 +84,10 @@ test("tunai kurang dari total ditolak di POS", async ({ page }) => {
   await login(page, "cashier");
   await page.goto("/pos");
   await page.getByRole("button", { name: /Kentang Goreng/ }).click();
+  await page.getByRole("button", { name: "Takeaway" }).click();
   await page.getByLabel("Uang diterima (Rp)").fill("1000");
   await page.getByRole("button", { name: /^Bayar/ }).click();
-  await expect(page.getByRole("alert")).toContainText("kurang");
+  await expect(page.locator('p[role="alert"]')).toContainText("kurang");
 });
 
 test.describe("akses route per role", () => {
