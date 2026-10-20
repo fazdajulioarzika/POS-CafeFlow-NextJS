@@ -37,9 +37,26 @@ export async function createUser(
   // trigger membuat profil default cashier; set role sesuai pilihan
   const { error: roleError } = await admin
     .from("profiles")
-    .update({ role: parsed.data.role, full_name: parsed.data.full_name })
+    .update({
+      role: parsed.data.role,
+      full_name: parsed.data.full_name,
+      is_active: true,
+    })
     .eq("id", data.user.id);
   if (roleError) return { error: "User dibuat, tetapi gagal mengatur role" };
+
+  // service role tidak punya auth.uid(), jadi pelaku dicatat eksplisit
+  await admin.rpc("write_audit", {
+    p_actor: me.id,
+    p_action: "user.created",
+    p_entity_type: "user",
+    p_entity_id: data.user.id,
+    p_metadata: {
+      email: parsed.data.email,
+      role: parsed.data.role,
+      name: parsed.data.full_name,
+    },
+  });
 
   revalidatePath("/users");
   return { success: `User ${parsed.data.email} berhasil dibuat` };

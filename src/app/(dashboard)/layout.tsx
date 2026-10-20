@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Button } from "@/components/ui/button";
 import { logout } from "../(auth)/actions";
+import Link from "next/link";
 
 const roleLabel = {
   owner: "Owner",
@@ -44,9 +45,12 @@ export default async function DashboardLayout({
                 <MobileNav groups={groups} />
               </div>
               <div className="text-sm">
-                <span className="font-medium">
+                <Link
+                  href="/profile"
+                  className="font-medium underline-offset-2 hover:underline"
+                >
                   {profile.full_name || profile.email}
-                </span>
+                </Link>
                 <span className="ml-2 rounded-md bg-secondary px-2 py-0.5 text-xs">
                   {roleLabel[profile.role]}
                 </span>

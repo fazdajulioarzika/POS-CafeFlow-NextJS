@@ -9,6 +9,7 @@ import { uuid } from "@/lib/uuid";
 import { statusLabel } from "@/components/tables/table-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cashChange, computeTotals } from "@/lib/pricing";
 
 type Category = { id: string; name: string };
 type Product = {
@@ -106,16 +107,14 @@ export function PosClient({
   // ---- hitungan di bawah hanya estimasi tampilan; server menghitung ulang ----
   const subtotal = cart.reduce((s, l) => s + l.unit_price * l.quantity, 0);
   const discNum = Math.max(0, Number(discountValue || 0));
-  const discount =
-    discountType === "amount"
-      ? Math.min(discNum, subtotal)
-      : discountType === "percent"
-      ? Math.floor((subtotal * Math.min(discNum, 100)) / 100)
-      : 0;
-  const tax = Math.round(((subtotal - discount) * taxPercent) / 100);
-  const total = subtotal - discount + tax;
+  const { discount, tax, total } = computeTotals({
+    subtotal,
+    discountType,
+    discountValue: discNum,
+    taxPercent,
+  });
   const tenderedNum = Number(tendered || 0);
-  const change = tenderedNum - total;
+  const change = cashChange(total, tenderedNum);
   const itemCount = cart.reduce((s, l) => s + l.quantity, 0);
 
   function addLine(p: Product, v: Variant | null) {

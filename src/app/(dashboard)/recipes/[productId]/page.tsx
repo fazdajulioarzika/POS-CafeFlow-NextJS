@@ -6,6 +6,7 @@ import { formatQty } from "@/lib/units";
 import { RecipeForm } from "@/components/recipes/recipe-form";
 import { ActionButton } from "@/components/layout/action-button";
 import { removeRecipeLine } from "../actions";
+import { portionsFromStock } from "@/lib/recipe";
 
 export default async function RecipeDetailPage({
   params,
@@ -45,7 +46,7 @@ export default async function RecipeDetailPage({
         name: ing.name,
         unit: ing.unit,
         qty: l.quantity_required,
-        portions: Math.floor(ing.stock_quantity / l.quantity_required),
+        portions: portionsFromStock(ing.stock_quantity, l.quantity_required),
       },
     ];
   });

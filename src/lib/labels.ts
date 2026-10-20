@@ -52,6 +52,7 @@ export const auditActionLabel: Record<string, string> = {
   "shift.closed": "Shift ditutup",
   "shift.cash_in": "Kas masuk",
   "shift.cash_out": "Kas keluar",
+  "user.created": "Pengguna dibuat",
 };
 
 export const auditGroups = [
