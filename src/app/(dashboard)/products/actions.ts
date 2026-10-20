@@ -128,10 +128,9 @@ export async function toggleProductFlag(
     throw new Error("Field tidak valid");
 
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("products")
-    .update({ [field]: value })
-    .eq("id", id);
+  const patch =
+    field === "is_active" ? { is_active: value } : { is_available: value };
+  const { error } = await supabase.from("products").update(patch).eq("id", id);
   if (error) throw new Error("Gagal mengubah status");
   revalidatePath("/products");
   revalidatePath(`/products/${id}`);

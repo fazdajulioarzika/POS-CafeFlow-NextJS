@@ -34,7 +34,6 @@ export async function createUser(
   if (error || !data.user)
     return { error: "Gagal membuat user (email mungkin sudah dipakai)" };
 
-  // trigger membuat profil default cashier; set role sesuai pilihan
   const { error: roleError } = await admin
     .from("profiles")
     .update({
