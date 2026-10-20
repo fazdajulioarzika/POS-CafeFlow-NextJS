@@ -26,7 +26,7 @@ const STYLE: Record<string, { icon: LucideIcon; card: string; badge: string }> =
     available: {
       icon: Check,
       card: "border-2 border-emerald-600 bg-emerald-50 ring-2 ring-emerald-600/20",
-      badge: "bg-emerald-600 text-white",
+      badge: "bg-emerald-700 text-white",
     },
     occupied: {
       icon: Users,
@@ -128,7 +128,7 @@ export default async function TablesPage({
             {freeTables.map((t) => (
               <span
                 key={t.id}
-                className="rounded-md bg-emerald-600 px-2.5 py-1 text-sm font-bold text-white"
+                className="rounded-md bg-emerald-700 px-2.5 py-1 text-sm font-bold text-white"
               >
                 {t.table_number}
               </span>

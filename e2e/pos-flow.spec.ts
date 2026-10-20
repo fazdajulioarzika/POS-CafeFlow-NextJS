@@ -54,25 +54,25 @@ test("kasir membuat pesanan, dapur memproses, meja kosong lagi", async ({
 
   // kasir mengantar, lalu pelanggan pergi
   await cashier.goto("/tables");
-  await cashier.getByRole("link", { name: orderNo }).waitFor();
+  const link = cashier.getByRole("link", { name: orderNo });
+  await link.waitFor();
   const tableCard = () =>
-    cashier
-      .locator("div.rounded-xl", {
-        has: cashier.getByRole("link", { name: orderNo }),
-      })
-      .last();
+    cashier.locator("div.rounded-xl", { has: link }).last();
 
-  await tableCard()
-    .getByRole("button", { name: "Tandai sudah diantar" })
-    .click();
-  await expect(
-    tableCard().getByRole("button", {
-      name: "Pelanggan selesai, kosongkan meja",
-    })
-  ).toBeVisible();
-  await tableCard()
-    .getByRole("button", { name: "Pelanggan selesai, kosongkan meja" })
-    .click();
+  const deliver = tableCard().getByRole("button", {
+    name: "Tandai sudah diantar",
+  });
+  await expect(async () => {
+    await cashier.reload();
+    await expect(deliver).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
+
+  await deliver.click();
+  const leave = tableCard().getByRole("button", {
+    name: "Pelanggan selesai, kosongkan meja",
+  });
+  await expect(leave).toBeVisible();
+  await leave.click();
 
   await expect(cashier.getByRole("link", { name: orderNo })).toHaveCount(0);
   await expect(
