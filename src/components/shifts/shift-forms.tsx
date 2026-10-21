@@ -38,7 +38,8 @@ export function OpenShiftForm() {
         <Input
           id="opening_cash"
           name="opening_cash"
-          type="number"
+          type="text"
+          inputMode="numeric"
           min={0}
           step={1}
           defaultValue={0}
@@ -77,8 +78,9 @@ export function CashMovementForm() {
         <Input
           id="cm_amount"
           name="amount"
-          type="number"
-          min={1}
+          type="text"
+          inputMode="numeric"
+          min={0}
           step={1}
           required
         />
@@ -118,7 +120,8 @@ export function CloseShiftForm({ expected }: { expected: number }) {
         <Input
           id="closing_cash"
           name="closing_cash"
-          type="number"
+          type="text"
+          inputMode="numeric"
           min={0}
           step={1}
           required

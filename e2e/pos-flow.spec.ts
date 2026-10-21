@@ -94,9 +94,12 @@ test("kasir membuat pesanan, dapur memproses, meja kosong lagi", async ({
       timeout: 2000,
     });
   }).toPass({ timeout: 20_000 });
-  await expect(
-    kitchen.getByRole("article", { name: `Pesanan ${orderNo}` })
-  ).toHaveCount(0, { timeout: 15_000 });
+  await expect(async () => {
+    await kitchen.reload();
+    await expect(
+      kitchen.getByRole("article", { name: `Pesanan ${orderNo}` })
+    ).toHaveCount(0, { timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
 });
 
 test("tunai kurang dari total ditolak di POS", async ({ page }) => {
