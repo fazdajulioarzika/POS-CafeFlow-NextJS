@@ -75,9 +75,7 @@ test("kasir membuat pesanan, dapur memproses, meja kosong lagi", async ({
     deliver.click(),
   ]);
 
-  const leave = tableCard().getByRole("button", {
-    name: "Pelanggan selesai, kosongkan meja",
-  });
+  const leave = tableCard().getByRole("button", { name: "Pelanggan selesai" });
   await expect(async () => {
     await cashier.reload();
     await expect(leave).toBeVisible({ timeout: 2000 });

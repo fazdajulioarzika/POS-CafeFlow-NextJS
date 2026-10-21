@@ -214,7 +214,7 @@ export default async function TablesPage({
                   )}
                   {order.status === "served" && (
                     <StatusActionButton orderId={order.id} to="completed">
-                      pelanggan selesai
+                      Pelanggan selesai
                     </StatusActionButton>
                   )}
                 </div>
