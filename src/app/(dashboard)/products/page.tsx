@@ -2,17 +2,29 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatRupiah } from "@/lib/money";
 import { productImageUrl } from "@/lib/storage";
+import { one } from "@/lib/relations";
+import { qs } from "@/lib/range";
 import { ActionButton } from "@/components/layout/action-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toggleProductFlag } from "./actions";
 
+const PAGE_SIZE = 20;
+
+type SP = { q?: string; category?: string; page?: string };
+
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string }>;
+  searchParams: Promise<SP>;
 }) {
-  const { q, category } = await searchParams;
+  const sp = await searchParams;
+  const q = (sp.q ?? "").replace(/[%,_]/g, "").trim();
+  const category = /^[0-9a-f-]{36}$/i.test(sp.category ?? "")
+    ? sp.category
+    : undefined;
+  const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
+
   const supabase = await createClient();
 
   const { data: categories } = await supabase
@@ -23,12 +35,19 @@ export default async function ProductsPage({
   let query = supabase
     .from("products")
     .select(
-      "id, sku, name, price, image_path, is_active, is_available, categories(name)"
+      "id, sku, name, price, image_path, is_active, is_available, categories(name)",
+      { count: "exact" }
     )
-    .order("name");
-  if (q) query = query.ilike("name", `%${q.replace(/[%,_]/g, "")}%`);
+    .order("name")
+    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+  if (q) query = query.ilike("name", `%${q}%`);
   if (category) query = query.eq("category_id", category);
-  const { data: products } = await query;
+  const { data: products, count } = await query;
+
+  const total = count ?? 0;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const pageHref = (p: number) =>
+    `/products?${qs({ q: q || undefined, category, page: String(p) })}`;
 
   return (
     <div className="space-y-6">
@@ -47,6 +66,7 @@ export default async function ProductsPage({
           name="q"
           defaultValue={q}
           placeholder="Cari nama produk"
+          aria-label="Cari nama produk"
           className="max-w-xs"
         />
         <select
@@ -65,6 +85,12 @@ export default async function ProductsPage({
         <Button type="submit" variant="outline">
           Filter
         </Button>
+        <Link
+          href="/products"
+          className="inline-flex h-9 items-center px-2 text-sm underline"
+        >
+          Reset
+        </Link>
       </form>
 
       <div className="overflow-x-auto rounded-lg border bg-card">
@@ -104,11 +130,7 @@ export default async function ProductsPage({
                       </div>
                     )}
                   </td>
-                  <td className="p-3">
-                    {(Array.isArray(p.categories)
-                      ? p.categories[0]?.name
-                      : (p.categories as { name: string } | null)?.name) ?? "-"}
-                  </td>
+                  <td className="p-3">{one(p.categories)?.name ?? "-"}</td>
                   <td className="p-3">{formatRupiah(p.price)}</td>
                   <td className="p-3">
                     {p.is_active ? "Aktif" : "Nonaktif"} ·{" "}
@@ -157,6 +179,30 @@ export default async function ProductsPage({
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="flex items-center justify-between text-sm">
+        <span>
+          Halaman {page} dari {pages} · {total} produk
+        </span>
+        <div className="flex gap-2">
+          {page > 1 && (
+            <Link
+              href={pageHref(page - 1)}
+              className="inline-flex h-8 items-center rounded-md border px-3"
+            >
+              Sebelumnya
+            </Link>
+          )}
+          {page < pages && (
+            <Link
+              href={pageHref(page + 1)}
+              className="inline-flex h-8 items-center rounded-md border px-3"
+            >
+              Berikutnya
+            </Link>
+          )}
+        </div>
       </div>
     </div>
   );

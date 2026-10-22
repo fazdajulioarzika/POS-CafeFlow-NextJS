@@ -1,9 +1,12 @@
+import Link from "next/link";
 import { getCurrentProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatRupiah } from "@/lib/money";
 import { formatDateTime } from "@/lib/datetime";
 import { one } from "@/lib/relations";
 import { paymentMethodLabel } from "@/lib/labels";
+import { qs, rangeParams, rangeText, resolveRange } from "@/lib/range";
+import { RangeFilter } from "@/components/layout/range-filter";
 import {
   CashMovementForm,
   CloseShiftForm,
@@ -20,8 +23,30 @@ type Summary = {
   by_method: { method: string; count: number; total: number }[];
 };
 
-export default async function ShiftsPage() {
+const PAGE_SIZE = 20;
+type SP = {
+  range?: string;
+  from?: string;
+  to?: string;
+  page?: string;
+  cashier?: string;
+};
+
+export default async function ShiftsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SP>;
+}) {
+  const sp = await searchParams;
   const me = await getCurrentProfile();
+  const isManager = me.role === "owner" || me.role === "manager";
+  const range = resolveRange(sp, "7d");
+  const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
+  const cashierFilter =
+    isManager && /^[0-9a-f-]{36}$/i.test(sp.cashier ?? "")
+      ? sp.cashier
+      : undefined;
+  const rp = rangeParams(range);
   const supabase = await createClient();
 
   const { data: open } = await supabase
@@ -45,13 +70,31 @@ export default async function ShiftsPage() {
     : null;
   const movements = movementsRes?.data ?? [];
 
-  const { data: history } = await supabase
+  let hq = supabase
     .from("shifts")
     .select(
-      "id, status, opening_cash, closing_cash, expected_cash, difference, note, opened_at, closed_at, cashier:profiles(full_name)"
+      "id, status, opening_cash, closing_cash, expected_cash, difference, note, opened_at, closed_at, cashier:profiles(full_name)",
+      { count: "exact" }
     )
+    .gte("opened_at", range.fromIso)
+    .lt("opened_at", range.toIso)
     .order("opened_at", { ascending: false })
-    .limit(30);
+    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+  if (cashierFilter) hq = hq.eq("cashier_id", cashierFilter);
+  const { data: history, count } = await hq;
+
+  const staffRes = isManager
+    ? await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("role", ["cashier", "manager", "owner"])
+        .order("full_name")
+    : null;
+  const staff = staffRes?.data ?? [];
+
+  const pages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
+  const pageHref = (p: number) =>
+    `/shifts?${qs({ ...rp, cashier: cashierFilter, page: String(p) })}`;
 
   const rows: [string, number, boolean?][] = summary
     ? [
@@ -150,18 +193,77 @@ export default async function ShiftsPage() {
             <CloseShiftForm expected={summary.expected} />
           </section>
         </>
-      ) : (
-        <section className="space-y-3">
-          <h2 className="text-lg font-medium">Buka shift</h2>
-          <p className="text-sm text-muted-foreground">
-            Pembayaran tunai hanya bisa diterima saat shift terbuka.
-          </p>
-          <OpenShiftForm />
-        </section>
-      )}
+      ) : null}
 
+      {/* kiri: buka shift (bila belum ada) | kanan: filter riwayat */}
+      <div
+        className={`grid gap-8 lg:items-start ${!open ? "lg:grid-cols-2" : ""}`}
+      >
+        {!open && (
+          <section className="space-y-3">
+            <h2 className="text-lg font-medium">Buka shift</h2>
+            <p className="text-sm text-muted-foreground">
+              Pembayaran tunai hanya bisa diterima saat shift terbuka.
+            </p>
+            <OpenShiftForm />
+          </section>
+        )}
+
+        <section className="space-y-3">
+          <h2 className="text-lg font-medium">
+            {isManager ? "Riwayat semua shift" : "Riwayat shift saya"}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Periode: {rangeText(range)}
+          </p>
+
+          <RangeFilter
+            basePath="/shifts"
+            range={range}
+            extra={{ cashier: cashierFilter }}
+          />
+
+          {isManager && (
+            <form
+              method="get"
+              action="/shifts"
+              className="flex flex-wrap items-end gap-2 print:hidden"
+            >
+              <input type="hidden" name="range" value={range.preset} />
+              {range.preset === "custom" && (
+                <>
+                  <input type="hidden" name="from" value={range.from} />
+                  <input type="hidden" name="to" value={range.to} />
+                </>
+              )}
+              <label className="space-y-1 text-sm">
+                <span className="block">Kasir</span>
+                <select
+                  name="cashier"
+                  defaultValue={cashierFilter ?? ""}
+                  className="h-9 rounded-md border border-input bg-card px-3 text-sm"
+                >
+                  <option value="">Semua kasir</option>
+                  {staff.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.full_name || s.id.slice(0, 8)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="submit"
+                className="h-9 rounded-md border bg-card px-4 text-sm"
+              >
+                Terapkan
+              </button>
+            </form>
+          )}
+        </section>
+      </div>
+
+      {/* tabel riwayat selebar penuh */}
       <section className="space-y-3">
-        <h2 className="text-lg font-medium">Riwayat shift</h2>
         <div className="overflow-x-auto rounded-lg border bg-card">
           <table className="w-full text-sm">
             <thead className="bg-secondary text-left">
@@ -215,12 +317,36 @@ export default async function ShiftsPage() {
                     colSpan={8}
                     className="p-6 text-center text-muted-foreground"
                   >
-                    Belum ada shift
+                    Tidak ada shift pada periode ini
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="flex items-center justify-between text-sm">
+          <span>
+            Halaman {page} dari {pages} · {count ?? 0} shift
+          </span>
+          <div className="flex gap-2">
+            {page > 1 && (
+              <Link
+                href={pageHref(page - 1)}
+                className="inline-flex h-8 items-center rounded-md border px-3"
+              >
+                Sebelumnya
+              </Link>
+            )}
+            {page < pages && (
+              <Link
+                href={pageHref(page + 1)}
+                className="inline-flex h-8 items-center rounded-md border px-3"
+              >
+                Berikutnya
+              </Link>
+            )}
+          </div>
         </div>
       </section>
     </div>
