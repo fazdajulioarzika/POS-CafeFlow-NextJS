@@ -61,16 +61,21 @@ export async function createUser(
   return { success: `User ${parsed.data.email} berhasil dibuat` };
 }
 
-export async function setUserActive(userId: string, isActive: boolean) {
-  const me = await getCurrentProfile();
-  if (me.role !== "owner") throw new Error("Tidak diizinkan");
-  if (userId === me.id)
-    throw new Error("Tidak bisa menonaktifkan akun sendiri");
+export async function setUserActive(
+  userId: string,
+  isActive: boolean
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const me = await getCurrentProfile()
+  if (me.role !== 'owner') return { ok: false, error: 'Tidak diizinkan' }
+  if (userId === me.id) return { ok: false, error: 'Tidak bisa menonaktifkan akun sendiri' }
 
-  const supabase = await createClient(); // RLS: hanya owner yang boleh update
-  await supabase
-    .from("profiles")
-    .update({ is_active: isActive })
-    .eq("id", userId);
-  revalidatePath("/users");
+  const supabase = await createClient() // RLS: hanya owner yang boleh update
+  const { error } = await supabase.from('profiles').update({ is_active: isActive }).eq('id', userId)
+  if (error) {
+    const msg = error.message.startsWith('CF:') ? error.message.slice(3) : 'Gagal mengubah status'
+    return { ok: false, error: msg }
+  }
+
+  revalidatePath('/users')
+  return { ok: true }
 }

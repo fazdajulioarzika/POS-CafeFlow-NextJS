@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { CreateUserForm } from "@/components/users/create-user-form";
 import { ToggleActiveButton } from "@/components/users/toggle-active-button";
+import { getCurrentProfile } from "@/lib/auth";
 
 export default async function UsersPage() {
+  const me = await getCurrentProfile();
   const supabase = await createClient();
   const { data: users } = await supabase
     .from("profiles")
@@ -37,7 +39,11 @@ export default async function UsersPage() {
                   <td className="p-3 capitalize">{u.role}</td>
                   <td className="p-3">{u.is_active ? "Aktif" : "Nonaktif"}</td>
                   <td className="p-3 text-right">
-                    <ToggleActiveButton userId={u.id} isActive={u.is_active} />
+                    <ToggleActiveButton
+                      userId={u.id}
+                      isActive={u.is_active}
+                      isSelf={u.id === me.id}
+                    />
                   </td>
                 </tr>
               ))}
