@@ -87,13 +87,13 @@ Password: `Demo12345!` (ubah dengan env `DEMO_PASSWORD` saat seed).
 
 ## Screenshot
 
-| Dashboard                           | POS                           | KDS                           |
-| ----------------------------------- | ----------------------------- | ----------------------------- |
-| ![](docs/screenshots/dashboard.png) | ![](docs/screenshots/pos.png) | ![](docs/screenshots/kds.png) |
+| Dashboard                           | POS                           | KDS                                 |
+| ----------------------------------- | ----------------------------- | ----------------------------------- |
+| ![](docs/screenshots/dashboard.png) | ![](docs/screenshots/pos.png) | ![](docs/screenshots/inventory.png) |
 
-| Meja                             | Inventory                           | Laporan                           |
-| -------------------------------- | ----------------------------------- | --------------------------------- |
-| ![](docs/screenshots/tables.png) | ![](docs/screenshots/inventory.png) | ![](docs/screenshots/reports.png) |
+| Meja                             | Inventory                     | Laporan                           |
+| -------------------------------- | ----------------------------- | --------------------------------- |
+| ![](docs/screenshots/tables.png) | ![](docs/screenshots/kds.png) | ![](docs/screenshots/reports.png) |
 
 ## Keamanan
 
